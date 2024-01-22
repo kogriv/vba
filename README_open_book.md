@@ -6,10 +6,44 @@
 ## Сохранение модулей
 При первом сохранении модулей VBA (файлов Эксель с модулями ВБА) потребуется выбор типа файла - с поддержкой макросов (*.xlsm). Должно появиться соответсвующее диалоговое окно.
 
-## Отладочная информация
+## Отладочная информация. Получение ошибок.
 Используйте консоль редактора `Immediate Window` (Ctrl+G).  
 Используйте команды `Debug.Print "Some message"` для вывода необходимой информации в консоль.  
-Возможна пошаговое выполнение. Для этого установите точки останова одинарным нажатием левой кнопки мыши по левой кромке окна модуля с кодом напротив нужной строки.
+Возможна пошаговое выполнение. Для этого установите точки останова одинарным нажатием левой кнопки мыши по левой кромке окна модуля с кодом напротив нужной строки.  
+
+Дедушка привык передавать сообщения голубями. Поэтому если не хотите перепечатывать сообщение из коробки, отлавливайте их, используя инструкции `On Error Resume Next` и `Debug.Print "Error: " & Err.Description` и передавайте в консоль. Пример функции с ошибкой в инструкции `Application.VBE.ActiveCodePane.CodeModule.Name`:
+```vba
+Function moduleName() As String
+    Debug.Print "Begining run function ModuleName()"
+    ' Use static var for holding current module name
+    Static moduleNameCache As String
+    
+    If moduleNameCache = "" Then
+        On Error Resume Next
+        ' moduleNameCache = ThisWorkbook.VBProject.VBComponents' (ThisWorkbook.CodeName).Name
+        ' Attempt get name from collection
+        moduleNameCache = Application.VBE.ActiveCodePane.CodeModule.Name
+        ' moduleNameCache = Me.CodeModule.Name
+        ' Attempt to get name using ThisWorkbook.VBProject.VBComponents
+        If Not ThisWorkbook Is Nothing Then
+            If ThisWorkbook.VBProject.VBComponents.Count > 0 Then
+                moduleNameCache = ThisWorkbook.VBProject.VBComponents(1).Name
+            End If
+        End If
+        
+        ' Error process
+        If Err.Number <> 0 Then
+            Debug.Print "Error: " & Err.Description
+            Err.Clear  ' Clear the error
+        End If
+        Debug.Print "____After printing error"
+        'On Error GoTo 0
+    End If
+    
+    ' Returning current mudule name
+    moduleName_value = moduleNameCache
+End Function
+```
 
 ## Пошаговая инструкция. Hello, world
 - Открытие Excel и редактора VBA:  
